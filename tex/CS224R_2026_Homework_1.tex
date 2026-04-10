@@ -25,9 +25,9 @@
 \\ {\large Due 4/10/2026 9pm PT}
 
 \begin{tabular}{rl}
-SUNet ID: & $\hspace{6cm}$\\
-Name: & \\
-Collaborators: & 
+SUNet ID: nallen21 & $\hspace{6cm}$\\
+Name: Nicholas Allen& \\
+Collaborators: N/A& 
 \end{tabular}
 \end{center}
 
@@ -147,7 +147,17 @@ python main.py --method bc_reg --env easy
 \end{verbatim}
 \end{tcolorbox}
 
-\textbf{\color{red}Include your results table here.}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Method} & \textbf{Mean Episode Length} & \textbf{Std Episode Length} \\
+\hline
+BC Regression (Easy) & 959.2 & 120.8 \\
+\hline
+\end{tabular}
+\caption{BC Regression on easy mode (50 evaluation episodes)}
+\end{table}
 
 \item \textbf{Run the regression agent on hard mode} and report the results in a table below (no new code needed):
 
@@ -157,12 +167,24 @@ python main.py --method bc_reg --env hard
 \end{verbatim}
 \end{tcolorbox}
 
-\textbf{\color{red}Include your results table here.}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Method} & \textbf{Mean Episode Length} & \textbf{Std Episode Length} \\
+\hline
+BC Regression (Hard) & 302.0 & 63.1 \\
+\hline
+\end{tabular}
+\caption{BC Regression on hard mode (50 evaluation episodes)}
+\end{table}
 
 
 \item \textbf{Explain} in 2--3 sentences the performance of the MSE regression on hard mode. Why is it performing the way it is? [1 point]\\
 \\
-\textbf{\color{red}Include your explanation here.}
+
+In hard mode, the expert stochastically commits to either the upper or lower gap at each two-gap pipe, resulting in a bimodal action distribution conditioned on the same state. Since MSE regression minimizes the average squared error, the policy learns to predict the mean of these two modes — a target y-position between the two gaps that corresponds to neither valid trajectory. This causes the bird to fly directly into the pipe rather than through either gap, explaining the sharp drop in performance from easy to hard mode.
+
 \end{enumerate}
 
 
@@ -206,12 +228,21 @@ python main.py --method bc_flow --env hard
 \end{verbatim}
 \end{tcolorbox}
 
-\textbf{\color{red}Include your results here.}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Method} & \textbf{Mean Episode Length} & \textbf{Std Episode Length} \\
+\hline
+BC Flow Matching (Hard) & 1000.0 & 0.0 \\
+\hline
+\end{tabular}
+\caption{Flow Matching on hard mode (50 evaluation episodes)}
+\end{table}
 
 \item \textbf{Explain} in 2--3 sentences why flow matching performs the way it does on hard mode. [1 point]\\
 \\
-\textbf{\color{red}Include your results and explanation here.}
-
+Flow matching works by learning a velocity field that guides Gaussian noise toward expert actions step by step, rather than just predicting a single average action like MSE does. Because we start from a random noise sample at inference time, noise that happens to start near the upper gap gets pushed toward the upper gap, and noise near the lower gap gets pushed toward the lower gap. Both valid trajectories are preserved. This is fundamentally different from MSE regression, which has no choice but to average the two modes together and output an action that flies straight into the pipe.
 \end{enumerate}
 
 \section*{Problem 3: DAgger [2 points]}
@@ -247,7 +278,21 @@ python main.py --method dagger --env hard
 
 \noindent Run dagger for 5 rounds (the default value). Plot the DAgger learning curve (round number on x-axis, mean episode length on y-axis, with error bars for standard deviation). Include the original regression performance as a horizontal line on the same plot.
 
-\textbf{\color{red}Include your DAgger learning curve plot here.}
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\hline
+\textbf{Round} & \textbf{Mean Episode Length} & \textbf{Std Episode Length} \\
+\hline
+1 & 287.1 & 58.7 \\
+2 & 654.5 & 278.1 \\
+3 & 677.7 & 288.1 \\
+4 & 798.7 & 218.1 \\
+5 & 1000.0 & 0.0 \\
+\hline
+\end{tabular}
+\caption{DAgger learning curve on hard mode (5 rounds)}
+\end{table}
 
 \item \textbf{Comparison.} Create a bar chart or table comparing the performance of all three methods on hard mode: Regression, Flow Matching, and DAgger (final round).  [0.5 points]\\
 
@@ -257,12 +302,23 @@ python main.py --plot
 \end{verbatim}
 \end{tcolorbox}
 
-\textbf{\color{red}Include the comparison plot and table here.}
-
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Method} & \textbf{Mean Episode Length} & \textbf{Std Episode Length} \\
+\hline
+BC Regression (Hard) & 302.0 & 63.1 \\
+BC Flow Matching (Hard) & 1000.0 & 0.0 \\
+DAgger (Hard, Round 5) & 1000.0 & 0.0 \\
+\hline
+\end{tabular}
+\caption{Comparison of all three methods on hard mode}
+\end{table}
 
 \item \textbf{Explain} in 3--4 sentences: why does DAgger improve over rounds? What role does the deterministic expert play? How does this DAgger's approach solve the challenges mentioned previously for the MSE regression policy? [0.5 points]\\
 \\
-\textbf{\color{red}Include your explanation here.}
+DAgger improves over rounds because each round exposes the policy to states it actually visits. This includes the weird in-between states where BC regression gets confused.It then labels them with what the expert would do. The deterministic expert is quite salient here — instead of randomly committing to either gap like the original expert, it always picks the upper gap, giving the policy consistent and unambiguous labels. Over multiple rounds this builds up a dataset that covers the policy's actual distribution, fixing both the compounding error problem and the bimodal ambiguity that broke plain BC regression.
 
 \end{enumerate}
 
