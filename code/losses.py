@@ -28,10 +28,9 @@ def mse_loss(policy, s_batch: torch.Tensor,
         Scalar MSE loss (mean over batch and action dimensions).
     """
     # ============================================================
-    # TODO: Implement mse_loss.
+    a_pred = policy(s_batch)
+    return ((a_pred - a_batch) ** 2).mean()
     # ============================================================
-    raise NotImplementedError("TODO: Implement mse_loss")
-
 
 def flow_matching_loss(policy, s_batch: torch.Tensor,
                        a_batch: torch.Tensor) -> torch.Tensor:
