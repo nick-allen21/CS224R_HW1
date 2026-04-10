@@ -81,9 +81,8 @@ class DeterministicExpert:
         if dist < self.commit_dist: # very close to the pipe
             self._committed = True
             # ======================================================
-            # TODO (Problem 4): Set the raw target.
+            raw_target = float(gap1_y)
             # ======================================================
-            raise NotImplementedError
         else:
             raw_target = float(midpoint)
 
@@ -124,9 +123,32 @@ def rollout_episode(env, policy, seed, action_chunk, device):
           truncated, info).
     """
     # ============================================================
-    # TODO (Problem 4): Implement single-episode policy rollout.
+    obs, _ = env.reset(seed=seed)
+    ep_states = []
+    ep_expert_actions = []
+    chunk_buf = None
+    step_in_chunk = 0
+    det_expert = DeterministicExpert()
+
+    while True:
+        if (chunk_buf is None) or (step_in_chunk >= EXECUTE_STEPS):
+            state_t = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
+            chunk_buf = policy(state_t).cpu().numpy().flatten()
+            step_in_chunk = 0
+
+        ep_states.append(obs.copy())
+        ep_expert_actions.append(det_expert.act(obs))
+
+        action = chunk_buf[step_in_chunk]
+        step_in_chunk += 1
+
+        obs, reward, terminated, truncated, info = env.step(np.array([action]))
+
+        if terminated or truncated:
+            break
+
+    return ep_states, ep_expert_actions
     # ============================================================
-    raise NotImplementedError("TODO: Implement rollout_episode")
 
 
 @torch.no_grad()
@@ -165,11 +187,16 @@ def rollout_and_relabel(policy, difficulty, num_episodes, pipe_speed, seed,
 
 
     # ============================================================
-    # TODO (Problem 4): Loop over episodes, call rollout_episode,
-    #   window into (state, action_chunk) pairs, return arrays.
-    # ============================================================
-    raise NotImplementedError("TODO: Implement rollout_and_relabel")
+    for ep in range(num_episodes):
+        det_expert.reset()
+        ep_states, ep_expert_actions = rollout_episode(env, policy, seed + ep, action_chunk, device)
 
+        for i in range(len(ep_states) - action_chunk):
+            new_states.append(ep_states[i])
+            new_actions.append(ep_expert_actions[i : i + action_chunk])
+
+    return np.array(new_states, dtype=np.float32), np.array(new_actions, dtype=np.float32)
+    # ============================================================
 
 def run_dagger(difficulty, initial_states, initial_actions, rounds,
                episodes_per_round, epochs, pipe_speed, seed,

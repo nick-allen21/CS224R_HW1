@@ -266,9 +266,12 @@ class FlowMatchingSchedule:
             (x_t, velocity) where both have shape (B, action_dim).
         """
         # ============================================================
-        # TODO: Implement the flow matching interpolation.
+        t = t.unsqueeze(-1)
+        x0 = torch.randn_like(x1)
+        linear_inter = t * x1 + (1 - t) * x0
+        velocity = x1 - x0
+        return (linear_inter, velocity)
         # ============================================================
-        raise NotImplementedError("TODO: Implement FlowMatchingSchedule.interpolate")
 
     @torch.no_grad()
     def sample(self, model, state):
@@ -282,10 +285,25 @@ class FlowMatchingSchedule:
             Sampled actions, shape (B, action_dim), clamped to [0, 1].
         """
         # ============================================================
-        # TODO: Implement sampling for flow matching.
-        # ============================================================
-        raise NotImplementedError("TODO: Implement FlowMatchingSchedule.sample")
+        t = 0.0
+        step_size = 1 / self.num_steps
+        x = torch.randn(state.shape[0], self.action_dim, device=state.device)
+        for _ in range(self.num_steps): 
 
+            # ensure t is a tensor
+            t_tensor = torch.full((state.shape[0],), t, device=state.device)
+
+            # get the velocity
+            velocity = model(x, state, t_tensor)
+
+            # apply Euler update
+            x = x + step_size * velocity
+
+            # increment time stamp
+            t += step_size
+            
+        return x.clamp(0, 1)
+        # ============================================================
 
 # ---------------------------------------------------------------------------
 # Policy wrappers that bundle model + schedule
